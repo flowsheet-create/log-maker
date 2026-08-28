@@ -408,9 +408,114 @@
     const type=fmt==="jpeg"?"image/jpeg":fmt==="webp"?"image/webp":"image/png";
     return new Promise(res=>c.toBlob(res,type,fmt==="jpeg"?0.94:0.96));
   }
-  function downloadBlob(blob,name){
-    const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;document.body.append(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500);
+    const isIOS =
+  /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+
+async function downloadBlob(blob, name) {
+  // iPhone/iPad Safari는 <a download>가 불안정해서
+  // 완성 이미지를 화면에 직접 띄운다.
+  if (isIOS) {
+    const url = URL.createObjectURL(blob);
+
+    const viewer = document.createElement("div");
+    viewer.style.cssText = `
+      position: fixed;
+      inset: 0;
+      z-index: 999999;
+      background: #fff7fa;
+      overflow: auto;
+      padding:
+        calc(env(safe-area-inset-top) + 10px)
+        12px
+        calc(env(safe-area-inset-bottom) + 20px);
+      text-align: center;
+    `;
+
+    const bar = document.createElement("div");
+    bar.style.cssText = `
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      background: #fff7fa;
+      padding: 10px 5px 13px;
+      border-bottom: 1px solid #efd9e2;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+    `;
+
+    bar.innerHTML = `
+      <div style="
+        color:#6e4d59;
+        font-size:15px;
+        font-weight:700;
+        margin-bottom:5px;
+      ">
+        이미지가 만들어졌어요 ♡
+      </div>
+
+      <div style="
+        color:#9b7d89;
+        font-size:12px;
+        line-height:1.5;
+        margin-bottom:10px;
+      ">
+        아래 이미지를 길게 눌러<br>
+        ‘사진에 저장’을 선택해 주세요.
+      </div>
+
+      <button type="button" style="
+        border:0;
+        border-radius:9px;
+        background:#dfa0b7;
+        color:white;
+        padding:9px 20px;
+        font-weight:700;
+      ">
+        돌아가기
+      </button>
+    `;
+
+    const img = document.createElement("img");
+    img.src = url;
+    img.alt = name;
+    img.style.cssText = `
+      display:block;
+      width:auto;
+      max-width:100%;
+      height:auto;
+      margin:18px auto;
+      box-shadow:0 8px 24px rgba(126,80,98,.15);
+      -webkit-touch-callout:default;
+      user-select:auto;
+    `;
+
+    viewer.appendChild(bar);
+    viewer.appendChild(img);
+    document.body.appendChild(viewer);
+
+    bar.querySelector("button").onclick = () => {
+      URL.revokeObjectURL(url);
+      viewer.remove();
+    };
+
+    return;
   }
+
+  // PC / Android
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+
+  a.href = url;
+  a.download = name;
+
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+
+  setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 1500);
+}
 
   async function exportOne(raw=null,suffix=""){
     try{
