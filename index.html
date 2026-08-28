@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>로그 이미지 생성기</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="overflowToast" class="toast hidden">내용이 캔버스 밖으로 넘쳤어요</div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-dot"></span>
+      <strong>로그 이미지 생성기</strong>
+      <span class="subtle">♡</span>
+    </div>
+    <div class="zoom-controls">
+      <button id="zoomOut" class="icon-btn">−</button>
+      <input id="zoomRange" type="range" min="35" max="160" value="100" />
+      <button id="zoomIn" class="icon-btn">＋</button>
+      <span id="zoomLabel">100%</span>
+      <button id="zoomFit" class="small-btn">맞춤</button>
+    </div>
+  </header>
+
+  <main class="app-shell">
+    <aside class="panel">
+      <details open>
+        <summary>콘텐츠</summary>
+        <div class="section-body">
+          <div class="toolbar wrap">
+            <button data-wrap="b">굵게</button>
+            <button data-wrap="i"><i>기울임</i></button>
+            <button data-wrap="c">“대사”</button>
+            <button data-wrap="c">보조색</button>
+            <button data-wrap="ha">형광 A</button>
+            <button data-wrap="hb">형광 B</button>
+            <button data-wrap="q">따옴표 강조</button>
+            <button data-line="a">강조 A</button>
+            <button data-line="b">강조 B</button>
+            <button id="insertPhoto">사진</button>
+            <button id="insertDivider">구분선</button>
+            <button id="insertPageBreak">페이지 나눔</button>
+            <button id="clearContent" class="danger-lite">비우기</button>
+          </div>
+
+          <textarea id="contentInput" rows="11" placeholder="로그를 붙여넣으세요"></textarea>
+
+          <div class="toolbar">
+            <button id="insertLeftBubble">왼쪽 말풍선</button>
+            <button id="insertRightBubble">오른쪽 말풍선</button>
+            <button id="toggleGuides">줄 표시 해제</button>
+          </div>
+          <p class="help"><code>===</code> 는 페이지가 나뉘는 자리예요. 분할 저장을 누르면 그 지점마다 한 장씩 만들어집니다.</p>
+          <input id="inlineImageInput" type="file" accept="image/*" hidden />
+        </div>
+      </details>
+
+      <details open>
+        <summary>제목 · 하단</summary>
+        <div class="section-body grid2">
+          <label>제목<input id="titleText" placeholder="비워도 됨" /></label>
+          <label>소제목<input id="subtitleText" placeholder="비워도 됨" /></label>
+          <label>제목 정렬
+            <select id="titleAlign">
+              <option value="left">왼쪽</option>
+              <option value="center">가운데</option>
+              <option value="right">오른쪽</option>
+            </select>
+          </label>
+          <label>제목 크기 <span class="value" data-for="titleSize"></span><input id="titleSize" type="range" min="14" max="52" value="24" /></label>
+          <label>소제목 크기 <span class="value" data-for="subtitleSize"></span><input id="subtitleSize" type="range" min="10" max="32" value="15" /></label>
+          <label>제목 ↔ 본문 <span class="value" data-for="titleGap"></span><input id="titleGap" type="range" min="0" max="80" value="28" /></label>
+          <label class="span2">하단<input id="footerText" placeholder="비워도 됨" /></label>
+          <label>하단 배치
+            <select id="footerAlign">
+              <option value="left">왼쪽</option>
+              <option value="center">가운데</option>
+              <option value="right">오른쪽</option>
+            </select>
+          </label>
+          <label>하단 크기 <span class="value" data-for="footerSize"></span><input id="footerSize" type="range" min="9" max="28" value="14" /></label>
+          <label class="span2">하단 ↔ 본문 <span class="value" data-for="footerGap"></span><input id="footerGap" type="range" min="0" max="90" value="35" /></label>
+        </div>
+      </details>
+
+      <details open>
+        <summary>글자</summary>
+        <div class="section-body">
+          <label>글꼴
+            <select id="fontFamily">
+              <option value="'Pretendard','Apple SD Gothic Neo','Noto Sans KR',sans-serif">고딕</option>
+              <option value="'Nanum Myeongjo','Batang','Times New Roman',serif">명조</option>
+              <option value="'Courier New',monospace">모노</option>
+            </select>
+          </label>
+          <label class="file-label">글꼴 파일 추가 (.ttf · .otf · .woff · .woff2)
+            <input id="fontUpload" type="file" accept=".ttf,.otf,.woff,.woff2,font/*" />
+          </label>
+          <div class="mini-title">굵기</div>
+          <div id="weightButtons" class="segmented">
+            <button data-weight="300">얇게</button>
+            <button data-weight="400">약간 얇게</button>
+            <button data-weight="500" class="active">보통</button>
+            <button data-weight="600">약간 굵게</button>
+            <button data-weight="700">굵게</button>
+          </div>
+        </div>
+      </details>
+
+      <details open>
+        <summary>조판</summary>
+        <div class="section-body">
+          <div class="mini-title">정렬</div>
+          <div id="alignButtons" class="segmented">
+            <button data-align="left" class="active">왼쪽</button>
+            <button data-align="center">가운데</button>
+            <button data-align="right">오른쪽</button>
+            <button data-align="justify">양쪽</button>
+          </div>
+          <div class="mini-title">줄바꿈</div>
+          <div id="wrapButtons" class="segmented">
+            <button data-wrapmode="keep-all" class="active">단어 단위</button>
+            <button data-wrapmode="break-all">글자 단위</button>
+          </div>
+          <div class="grid2 compact">
+            <label>글자 크기 <span class="value" data-for="fontSize"></span><input id="fontSize" type="range" min="10" max="32" step="1" value="16" /></label>
+            <label>자간 <span class="value" data-for="letterSpacing"></span><input id="letterSpacing" type="range" min="-3" max="8" step="0.1" value="-0.5" /></label>
+            <label>행간 <span class="value" data-for="lineHeight"></span><input id="lineHeight" type="range" min="14" max="55" value="22" /></label>
+            <label>문단 간격 <span class="value" data-for="paragraphGap"></span><input id="paragraphGap" type="range" min="0" max="50" value="14" /></label>
+            <label>장평 <span class="value" data-for="scaleX"></span><input id="scaleX" type="range" min="70" max="130" value="100" /></label>
+            <label>사진 너비 <span class="value" data-for="imageWidth"></span><input id="imageWidth" type="range" min="20" max="100" value="100" /></label>
+          </div>
+        </div>
+      </details>
+
+      <details open>
+        <summary>색과 강조</summary>
+        <div class="section-body color-grid">
+          <label><input id="textColor" type="color" value="#282828" />글자색</label>
+          <label><input id="secondaryColor" type="color" value="#9a6d78" />보조색</label>
+          <label><input id="accentA" type="color" value="#c59ca7" />강조 A</label>
+          <label><input id="accentB" type="color" value="#96a8bd" />강조 B</label>
+          <label><input id="highlightA" type="color" value="#fff0a8" />형광 A</label>
+          <label><input id="highlightB" type="color" value="#dff3ff" />형광 B</label>
+          <label class="check span2"><input id="autoQuotes" type="checkbox" checked /> 따옴표 자동 감지 — “대사”에 보조색</label>
+          <label class="check span2"><input id="autoParen" type="checkbox" /> 괄호 자동 감지 — (속마음)을 흐리게</label>
+          <label class="check span2"><input id="textShadow" type="checkbox" /> 글자 그림자</label>
+        </div>
+      </details>
+
+      <details open>
+        <summary>말풍선</summary>
+        <div class="section-body">
+          <div id="bubbleStyleButtons" class="segmented">
+            <button data-bubblestyle="simple" class="active">심플</button>
+            <button data-bubblestyle="kakao">카카오톡</button>
+            <button data-bubblestyle="imessage">아이메시지</button>
+          </div>
+          <div class="grid2 compact">
+            <label>왼쪽 이름<input id="leftName" placeholder="비우면 숨김" /></label>
+            <label>오른쪽 이름<input id="rightName" placeholder="비우면 숨김" /></label>
+            <label><input id="chatBg" type="color" value="#eef1f4" />대화창</label>
+            <label><input id="leftBubble" type="color" value="#ffffff" />왼쪽 풍선</label>
+            <label><input id="rightBubble" type="color" value="#fee500" />오른쪽 풍선</label>
+            <label><input id="leftBubbleText" type="color" value="#222222" />왼쪽 글자</label>
+            <label><input id="rightBubbleText" type="color" value="#222222" />오른쪽 글자</label>
+            <label>글자 크기 <span class="value" data-for="bubbleFontSize"></span><input id="bubbleFontSize" type="range" min="10" max="28" value="15" /></label>
+            <label>행간 <span class="value" data-for="bubbleLineHeight"></span><input id="bubbleLineHeight" type="range" min="14" max="42" value="20" /></label>
+            <label>내부 여백 <span class="value" data-for="bubblePadding"></span><input id="bubblePadding" type="range" min="4" max="30" value="12" /></label>
+            <label>풍선 간격 <span class="value" data-for="bubbleGap"></span><input id="bubbleGap" type="range" min="2" max="32" value="12" /></label>
+            <label>이름 간격 <span class="value" data-for="nameGap"></span><input id="nameGap" type="range" min="0" max="20" value="4" /></label>
+            <label>풍선 너비 <span class="value" data-for="bubbleWidth"></span><input id="bubbleWidth" type="range" min="35" max="95" value="75" /></label>
+          </div>
+        </div>
+      </details>
+
+      <details open>
+        <summary>캔버스</summary>
+        <div class="section-body">
+          <div class="mini-title">비율</div>
+          <div id="ratioButtons" class="segmented">
+            <button data-ratio="auto" class="active">자동</button>
+            <button data-ratio="1/1">1:1</button>
+            <button data-ratio="4/5">4:5</button>
+            <button data-ratio="16/9">16:9</button>
+            <button data-ratio="9/16">9:16</button>
+          </div>
+          <label>너비 <span class="value" data-for="canvasWidth"></span><input id="canvasWidth" type="range" min="320" max="1400" step="10" value="600" /></label>
+          <div class="mini-title">단 나누기</div>
+          <div id="columnButtons" class="segmented">
+            <button data-columns="1" class="active">한 단</button>
+            <button data-columns="2">두 단 (책 내지)</button>
+          </div>
+          <div class="grid2 compact">
+            <label>좌우 여백 <span class="value" data-for="paddingX"></span><input id="paddingX" type="range" min="10" max="160" value="50" /></label>
+            <label>위아래 여백 <span class="value" data-for="paddingY"></span><input id="paddingY" type="range" min="10" max="220" value="70" /></label>
+            <label class="span2">세로 위치
+              <select id="verticalAlign">
+                <option value="top">위</option>
+                <option value="center">가운데</option>
+                <option value="bottom">아래</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </details>
+
+      <details open>
+        <summary>배경</summary>
+        <div class="section-body">
+          <div id="backgroundButtons" class="segmented">
+            <button data-bg="solid" class="active">단색</button>
+            <button data-bg="gradient">그라데이션</button>
+            <button data-bg="image">이미지</button>
+            <button data-bg="transparent">투명</button>
+          </div>
+          <div class="grid2 compact">
+            <label><input id="bgColor1" type="color" value="#faf8f5" />색 1</label>
+            <label><input id="bgColor2" type="color" value="#e8e1db" />색 2</label>
+            <label class="span2">그라데이션 방향 <span class="value" data-for="gradientAngle"></span><input id="gradientAngle" type="range" min="0" max="360" value="160" /></label>
+            <label class="span2 file-label">배경 이미지<input id="bgImageInput" type="file" accept="image/*" /></label>
+            <label><input id="overlayColor" type="color" value="#ffffff" />오버레이 색</label>
+            <label>오버레이 투명도 <span class="value" data-for="overlayOpacity"></span><input id="overlayOpacity" type="range" min="0" max="100" value="30" /></label>
+            <label>배경 흐림 <span class="value" data-for="bgBlur"></span><input id="bgBlur" type="range" min="0" max="30" value="0" /></label>
+            <label>테두리 <span class="value" data-for="borderWidth"></span><input id="borderWidth" type="range" min="0" max="20" value="0" /></label>
+            <label><input id="borderColor" type="color" value="#cccccc" />테두리 색</label>
+            <label>모서리 둥글기 <span class="value" data-for="borderRadius"></span><input id="borderRadius" type="range" min="0" max="80" value="0" /></label>
+          </div>
+        </div>
+      </details>
+
+      <details open>
+        <summary>프리셋 · 저장</summary>
+        <div class="section-body">
+          <div class="mini-title">지금 설정을 이름 붙여 저장</div>
+          <div class="inline">
+            <input id="presetName" placeholder="예: 명조 세로형" />
+            <button id="savePreset">저장</button>
+          </div>
+          <div class="mini-title">저장된 프리셋</div>
+          <div id="presetList" class="preset-list"></div>
+          <p class="help">이름을 누르면 그 설정으로 바뀌고, × 를 누르면 지워집니다. 본문 글은 저장되지 않고 서식만 담겨요.</p>
+
+          <div class="mini-title">설정 코드로 주고받기</div>
+          <div class="toolbar">
+            <button id="copySettings">설정 복사</button>
+            <button id="applySettings">설정 적용</button>
+            <button id="resetSettings">초기화</button>
+          </div>
+
+          <div class="mini-title">저장 설정</div>
+          <div class="grid2 compact">
+            <label>해상도
+              <select id="exportScale">
+                <option value="1">1×</option>
+                <option value="2" selected>2×</option>
+                <option value="3">3×</option>
+              </select>
+            </label>
+            <label>형식
+              <select id="exportFormat">
+                <option value="png">PNG</option>
+                <option value="jpeg">JPG</option>
+                <option value="webp">WEBP</option>
+              </select>
+            </label>
+            <label class="span2">파일 이름<input id="fileName" value="log-image" /></label>
+          </div>
+          <div class="toolbar bottom-actions">
+            <button id="showSyntax">표기법</button>
+            <button id="copyImage">복사</button>
+            <button id="saveImage" class="primary">이미지 저장</button>
+            <button id="saveSplit" class="primary">분할 저장</button>
+          </div>
+        </div>
+      </details>
+    </aside>
+
+    <section class="workspace">
+      <div id="stage" class="stage">
+        <article id="canvas" class="canvas">
+          <div class="bg-layer"></div>
+          <div class="overlay-layer"></div>
+          <div class="canvas-inner">
+            <header id="titleBlock" class="title-block">
+              <div id="previewTitle" class="preview-title"></div>
+              <div id="previewSubtitle" class="preview-subtitle"></div>
+            </header>
+            <div id="previewContent" class="preview-content"></div>
+            <footer id="previewFooter" class="preview-footer"></footer>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="syntaxDialog">
+    <button class="dialog-x" data-close>×</button>
+    <h3>표기법</h3>
+    <p><code>&gt; 대사</code> 왼쪽 말풍선 · <code>&lt; 대사</code> 오른쪽 말풍선</p>
+    <p><code>|a 문장</code> 강조 A 막대 · <code>|b 문장</code> 강조 B 막대. 연속된 줄은 하나의 막대로 묶입니다.</p>
+    <p><code>---</code> 구분선 · <code>===</code> 페이지 나눔</p>
+    <p>글자 꾸밈: <code>&lt;b&gt;</code> 굵게, <code>&lt;i&gt;</code> 기울임, <code>&lt;c&gt;</code> 보조색, <code>&lt;ha&gt;</code>/<code>&lt;hb&gt;</code> 형광, <code>&lt;q&gt;</code> 따옴표 강조.</p>
+    <div class="dialog-actions"><button data-close>닫기</button></div>
+  </dialog>
+
+  <dialog id="settingsDialog">
+    <button class="dialog-x" data-close>×</button>
+    <h3>설정 코드 적용</h3>
+    <textarea id="settingsCode" rows="10" placeholder="설정 코드를 붙여넣으세요"></textarea>
+    <div class="dialog-actions"><button data-close>취소</button><button id="confirmSettings" class="primary">적용</button></div>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
